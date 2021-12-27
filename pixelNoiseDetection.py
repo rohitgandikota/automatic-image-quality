@@ -42,6 +42,72 @@ def pixelNoise(band,display = 1):
         return len(error[error==1].flatten()),error
     else:
         return len(error[error==1].flatten())
+    
+def detect_sp(patch, w):
+    """
+    Algorithm 1 (Basic) for detection of salt and pepper noise
+    """
+    C = 0
+    centre  = int(patch.shape[0]/2)
+    pix = patch[centre,centre]
+    T = 0.5
+#    T = w*w - (2*w)
+    patch = np.array(patch)
+    for neigh in np.nditer(patch):
+        G = abs(pix - (neigh+1))/(neigh+1)
+        if G > T or G ==T:
+            C += 1
+    if C > 2*w*(2*w+1) and (pix == 255 or pix == 0):
+        return 1
+    else:
+        return 0
+        
+def detect_sp_advanced(image):
+    """
+    An advanced adaptive window sized s&p noise detection using Algorithm 1
+    """
+    windows = [3]
+    detected = np.zeros(image.shape)
+    for window in windows:
+        for k in range(int(image.shape[2])):
+            print('Detecting Channel:' + str(k))
+            for i in range(int(image.shape[0])):
+                for j in range(int(image.shape[1])):
+                    patch = image[(i-window):(i+window+1), (j-window):(j+window+1),k]
+                    try:
+                        med = np.median(patch)
+                        maxi = np.max(patch)
+                        mini = np.min(patch)
+                        if med<maxi and med>mini:
+                            if image[i,j,k] < maxi and image[i,j,k]>mini:
+                                pass
+                            else:
+                                detected[i,j,k] =  detect_sp(patch, window)
+                    except:
+                        pass
+                    
+    return detected
+
+
+def detect_sp_new(image):
+    """
+    An advanced adaptive window sized s&p noise detection using Algorithm 1
+    """
+    windows = [3]
+    detected = np.zeros(image.shape)
+    for window in windows:
+        for k in range(int(image.shape[2])):
+            print('Detecting Channel:' + str(k))
+            for i in range(int(image.shape[0])):
+                for j in range(int(image.shape[1])):
+                    patch = image[(i-window):(i+window+1), (j-window):(j+window+1),k]
+                    try:
+                        detected[i,j,k] =  detect_sp(patch, window)
+                    except:
+                        pass
+                    
+    return detected
+
 if __name__=='__main__':
 
     file = 'BAND.tif'
